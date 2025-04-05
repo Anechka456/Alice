@@ -93,13 +93,19 @@ def handle_dialog(req, res):
         'я покупаю'
     ]:
         # Пользователь согласился, прощаемся.
-        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
+        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете! А теперь купи кролика.'
         res['response']['end_session'] = True
+        sessionStorage[user_id]['suggests'] = [
+            "Не хочу.",
+            "Не буду.",
+            "Отстань!",
+        ]
+        sessionStorage[user_id]['animal'] = 'кролика'
         return
 
     # Если нет, то убеждаем его купить слона!
     res['response']['text'] = \
-        f"Все говорят '{req['request']['original_utterance']}', а ты купи слона!"
+        f"Все говорят '{req['request']['original_utterance']}', а ты купи {sessionStorage[user_id]['animal']}!"
     res['response']['buttons'] = get_suggests(user_id)
 
 
@@ -122,7 +128,7 @@ def get_suggests(user_id):
     if len(suggests) < 2:
         suggests.append({
             "title": "Ладно",
-            "url": "https://market.yandex.ru/search?text=слон",
+            "url": f"https://market.yandex.ru/search?text={sessionStorage[user_id]['animal']}",
             "hide": True
         })
 
