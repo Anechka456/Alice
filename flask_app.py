@@ -1,3 +1,4 @@
+import requests
 from flask import Flask, request, jsonify
 import logging
 import random
@@ -18,6 +19,23 @@ cities = {
 sessionStorage = {}
 
 
+def get_country(city_name):
+    try:
+        url = "https://geocode-maps.yandex.ru/1.x/"
+        params = {
+            "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
+            'geocode': city_name,
+            'format': 'json'
+        }
+        data = requests.get(url, params).json()
+        # все отличие тут, мы получаем имя страны
+        return data['response']['GeoObjectCollection'][
+            'featureMember'][0]['GeoObject']['metaDataProperty'][
+            'GeocoderMetaData']['AddressDetails']['Country']['CountryName']
+    except Exception as e:
+        return e, 1
+
+
 @app.route('/post', methods=['POST'])
 def main():
     logging.info('Request: %r', request.json)
@@ -30,7 +48,7 @@ def main():
     }
     req = request.json
     if req['request']['original_utterance'] == 'Помощь':
-        response['response']['text'] = 'Вы должны угадать город по фото'
+        response['response']['text'] = 'Вы должны угадать город по фото, а после страну'
         return jsonify(response)
     handle_dialog(response, request.json)
     if 'buttons' not in response['response']:
@@ -130,6 +148,25 @@ def play_game(res, req):
         res['response']['card']['title'] = 'Что это за город?'
         res['response']['card']['image_id'] = cities[city][attempt - 1]
         res['response']['text'] = 'Тогда сыграем!'
+    elif attempt == 0:        # пользователь угадывает страну
+        city = sessionStorage[user_id]['city']
+        country = get_country(city)
+        print(country)
+
+        if country.lower() == req['request']['nlu']['entities']['value']['country'].lower():
+            # пользователь угадал страну
+            res['response']['text'] = 'Правильно! Сыграем ещё?'
+            res['response']['buttons'] = [
+                {'title': 'Покажи город на карте', 'url': f'https://yandex.ru/maps/?mode=search&text={city}',
+                 'hide': True}]
+            sessionStorage[user_id]['guessed_cities'].append(city)
+            sessionStorage[user_id]['game_started'] = False
+        else:
+            # пользователь не угадал страну
+            res['response']['text'] = 'Нет, может повезёт в другой раз!'
+            sessionStorage[user_id]['guessed_cities'].append(city)
+            sessionStorage[user_id]['game_started'] = False
+        return
     else:
         # сюда попадаем, если попытка отгадать не первая
         city = sessionStorage[user_id]['city']
@@ -137,13 +174,11 @@ def play_game(res, req):
         if get_city(req) == city:
             # если да, то добавляем город к sessionStorage[user_id]['guessed_cities'] и
             # отправляем пользователя на второй круг. Обратите внимание на этот шаг на схеме.
-            res['response']['text'] = 'Правильно! Сыграем ещё?'
+            res['response']['text'] = 'Правильно! Теперь отгадай страну'
             res['response']['buttons'] = [
                 {'title': 'Покажи город на карте', 'url': f'https://yandex.ru/maps/?mode=search&text={city}',
                  'hide': True}]
-            sessionStorage[user_id]['guessed_cities'].append(city)
-            sessionStorage[user_id]['game_started'] = False
-            return
+            sessionStorage[user_id]['attempt'] = -1
         else:
             # если нет
             if attempt == 3:
