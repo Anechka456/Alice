@@ -100,7 +100,7 @@ def handle_dialog(res, req):
                 # По схеме можно увидеть, что здесь окажутся и пользователи, которые уже отгадывали города
                 if len(sessionStorage[user_id]['guessed_cities']) == 3:
                     # если все три города отгаданы, то заканчиваем игру
-                    res['response']['text'] = 'Ты отгадал все города!'
+                    res['response']['text'] = f'{sessionStorage[user_id]['first_name']} ты отгадал все города!'
                     res['end_session'] = True
                 else:
                     # если есть неотгаданные города, то продолжаем игру
@@ -114,9 +114,9 @@ def handle_dialog(res, req):
                 res['end_session'] = True
             else:
                 if req['request']['original_utterance'] == 'Покажи город на карте':
-                    res['response']['text'] = 'Вот. Сыграем ещё?'
+                    res['response']['text'] = f'Вот. {sessionStorage[user_id]['first_name']} cыграем ещё?'
                 else:
-                    res['response']['text'] = 'Не поняла ответа! Так да или нет?'
+                    res['response']['text'] = f'{sessionStorage[user_id]['first_name']} не поняла ответа! Так да или нет?'
                 res['response']['buttons'] = [
                     {
                         'title': 'Да',
@@ -145,7 +145,7 @@ def play_game(res, req):
         # добавляем в ответ картинку
         res['response']['card'] = {}
         res['response']['card']['type'] = 'BigImage'
-        res['response']['card']['title'] = 'Что это за город?'
+        res['response']['card']['title'] = f'{sessionStorage[user_id]['first_name']} что это за город?'
         res['response']['card']['image_id'] = cities[city][attempt - 1]
         res['response']['text'] = 'Тогда сыграем!'
     elif attempt == 0:        # пользователь угадывает страну
@@ -155,7 +155,7 @@ def play_game(res, req):
 
         if country.lower() == req['request']['nlu']['entities']['value']['country'].lower():
             # пользователь угадал страну
-            res['response']['text'] = 'Правильно! Сыграем ещё?'
+            res['response']['text'] = f'{sessionStorage[user_id]['first_name']} правильно! Сыграем ещё?'
             res['response']['buttons'] = [
                 {'title': 'Покажи город на карте', 'url': f'https://yandex.ru/maps/?mode=search&text={city}',
                  'hide': True}]
@@ -174,7 +174,7 @@ def play_game(res, req):
         if get_city(req) == city:
             # если да, то добавляем город к sessionStorage[user_id]['guessed_cities'] и
             # отправляем пользователя на второй круг. Обратите внимание на этот шаг на схеме.
-            res['response']['text'] = 'Правильно! Теперь отгадай страну'
+            res['response']['text'] = f'{sessionStorage[user_id]['first_name']} правильно! Теперь отгадай страну'
             res['response']['buttons'] = [
                 {'title': 'Покажи город на карте', 'url': f'https://yandex.ru/maps/?mode=search&text={city}',
                  'hide': True}]
@@ -186,7 +186,7 @@ def play_game(res, req):
                 # В этом случае говорим ответ пользователю,
                 # добавляем город к sessionStorage[user_id]['guessed_cities'] и отправляем его на второй круг.
                 # Обратите внимание на этот шаг на схеме.
-                res['response']['text'] = f'Вы пытались. Это {city.title()}. Сыграем ещё?'
+                res['response']['text'] = f'{sessionStorage[user_id]['first_name']} вы пытались. Это {city.title()}. Сыграем ещё?'
                 sessionStorage[user_id]['game_started'] = False
                 sessionStorage[user_id]['guessed_cities'].append(city)
                 return
@@ -194,7 +194,7 @@ def play_game(res, req):
                 # иначе показываем следующую картинку
                 res['response']['card'] = {}
                 res['response']['card']['type'] = 'BigImage'
-                res['response']['card']['title'] = 'Неправильно. Вот тебе дополнительное фото'
+                res['response']['card']['title'] = f'Неправильно. {sessionStorage[user_id]['first_name']} вот тебе дополнительное фото'
                 res['response']['card']['image_id'] = cities[city][attempt - 1]
                 res['response']['text'] = 'А вот и не угадал!'
     # увеличиваем номер попытки доля следующего шага
