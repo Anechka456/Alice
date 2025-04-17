@@ -8,7 +8,7 @@ def get_geo_info(city_name, type_info):
     params = {
         'geocode': city_name,
         'format': 'json',
-        'apikey': "40d1649f-0493-4b70-98ba-98533de7710b"
+        'apikey': "8013b162-6b42-4997-9691-77b7074026e0"
     }
 
     response = requests.get(url, params)
@@ -41,3 +41,7 @@ def get_distance(p1, p2):
     distance = R * c
 
     return distance
+
+
+print(get_geo_info('Франция', 'coordinates'))
+print(get_geo_info('47.464110 55.869284', 'country'))
